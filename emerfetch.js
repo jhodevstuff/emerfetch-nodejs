@@ -97,15 +97,16 @@ const fetchMerkur = async () => {
 
 const fetchAlpenwelle = async () => {
   const url = 'https://alpenwelle.de/aktuelles/regionale-nachrichten/bad-toelz-wolfratshausen';
+  let browser;
   try {
-    // const browser = await puppeteer.launch();
-    const browser = await puppeteer.launch({
-      executablePath: '/usr/bin/chromium-browser', // Fix for RPi
+    // browser = await puppeteer.launch();
+    browser = await puppeteer.launch({
+      executablePath: '/usr/bin/chromium-browser', // RPi fix
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     const page = await browser.newPage();
     console.log('Looking at Alpenwelle');
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 20000 });
+    await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
     console.log('Starting dirty things to get the content');
     await new Promise(resolve => setTimeout(resolve, 5000));
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
@@ -128,12 +129,15 @@ const fetchAlpenwelle = async () => {
       }
       return arr;
     });
-    await browser.close();
     console.log(`${headlines.length} articles found`);
     return headlines;
   } catch (error) {
     console.log('Alpenerror', error);
     return [];
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
 };
 
