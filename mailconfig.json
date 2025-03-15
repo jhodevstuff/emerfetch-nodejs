@@ -1,0 +1,5 @@
+{
+  "EMAIL_TO": "you@example.de",
+  "EMAIL_FROM": "emerfetch@host.de",
+  "LOCAL_ENVELOPE_FROM": "emerfetch@host.de"
+}
