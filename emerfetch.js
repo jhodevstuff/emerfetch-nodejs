@@ -13,7 +13,7 @@ const cheerio = require('cheerio');
 const nodemailer = require('nodemailer');
 const puppeteer = require('puppeteer');
 
-const buildDate = '2025-03-15';
+const buildDate = '2025-06-17';
 
 const EMAIL_TO = 'mail@ijosh.pics';
 const EMAIL_FROM = 'emerfetch@ijosh.pics';
@@ -49,8 +49,8 @@ const loadKeywords = () => {
   return fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf8')) : [];
 };
 
-const loadExistingHeadlines = (site) => {
-  const filePath = path.join(__dirname, 'logs', `${site.toLowerCase()}.json`);
+const loadExistingLinks = (site) => {
+  const filePath = path.join(__dirname, 'logs', `${site.toLowerCase()}_links.json`);
   if (fs.existsSync(filePath)) {
     const content = fs.readFileSync(filePath, 'utf8');
     if (content.trim().length === 0) return [];
@@ -63,11 +63,11 @@ const loadExistingHeadlines = (site) => {
   return [];
 };
 
-const saveExistingHeadlines = (site, headlines) => {
+const saveExistingLinks = (site, links) => {
   const dirPath = path.join(__dirname, 'logs');
   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath);
-  const filePath = path.join(dirPath, `${site.toLowerCase()}.json`);
-  fs.writeFileSync(filePath, JSON.stringify(headlines, null, 2), 'utf8');
+  const filePath = path.join(dirPath, `${site.toLowerCase()}_links.json`);
+  fs.writeFileSync(filePath, JSON.stringify(links, null, 2), 'utf8');
 };
 
 const keywordMatch = (headline, keywords) => {
@@ -146,33 +146,37 @@ const processSite = async (site, fetchFunc) => {
   const headlines = await fetchFunc();
   const keywords = loadKeywords();
   console.log(`Checking ${keywords.length} keywords`);
-  const existing = loadExistingHeadlines(site);
-  console.log(`Allready known articles: ${existing.length}`);
+  const existingLinks = loadExistingLinks(site);
+  console.log(`Allready known articles: ${existingLinks.length}`);
+  const currentLinks = headlines.map(obj => obj.link);
+  let filteredLinks = existingLinks.filter(link => currentLinks.includes(link));
   for (const obj of headlines) {
-    if (!existing.some(e => e.headline === obj.headline && e.link === obj.link)) {
+    if (!filteredLinks.includes(obj.link)) {
       if (keywordMatch(obj.headline, keywords)) {
         console.log(`Keyword match: "${obj.headline}"`);
         await sendEmail(site, obj);
         await new Promise(r => setTimeout(r, 2000));
       }
-      existing.push(obj);
+      filteredLinks.push(obj.link);
     }
   }
-  saveExistingHeadlines(site, existing);
+  saveExistingLinks(site, filteredLinks);
   console.log(`${site} done`);
 };
 
-(async () => {
+const main = async () => {
   console.log('Welcome to');
   console.log(`
                            __      _       _     
   ___ _ __ ___   ___ _ __ / _| ___| |_ ___| |__  
- / _ \\ '_ \` _ \\ / _ \\ '__| |_ / _ \\ __/ __| '_ \\ 
+ / _ \\ '_ \\ _ \\ / _ \\ '__| |_ / _ \\ __/ __| '_ \\ 
 |  __/ | | | | |  __/ |  |  _|  __/ || (__| | | |
  \\___|_| |_| |_|\\___|_|  |_|  \\___|\\__\\___|_| |_|
 `);
-  console.log('Build', buildDate, '| https://github.com/jhodevstuff\r\n\n')
+  console.log('Build', buildDate, '| https://github.com/jhodevstuff\r\n\n');
   await processSite('Merkur', fetchMerkur);
   await processSite('Alpenwelle', fetchAlpenwelle);
   console.log('Job done - bye');
-})();
+};
+
+main();
