@@ -106,7 +106,7 @@ const fetchAlpenwelle = async () => {
     });
     const page = await browser.newPage();
     console.log('Looking at Alpenwelle');
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
+    await page.goto(url, { waitUntil: 'networkidle0', timeout: 360000 });
     console.log('Starting dirty things to get the content');
     await new Promise(resolve => setTimeout(resolve, 5000));
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
